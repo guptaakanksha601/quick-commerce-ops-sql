@@ -1,0 +1,10 @@
+
+Recommendations:
+
+• Prioritize operational improvements in high-risk cities such as Fortaleza, Salvador, Sao Paulo, and Rio de Janeiro to reduce SLA breach rates and protect high-revenue regions.
+
+• Conduct targeted audits of worst-performing sellers to address fulfillment process gaps and improve delivery reliability without broad operational changes.
+
+• Implement safety stock and replenishment monitoring for high-concentration SKUs to prevent stockouts and fulfillment delays.
+
+• Introduce city-level SLA dashboards to track delay trends and revenue at risk in real time.

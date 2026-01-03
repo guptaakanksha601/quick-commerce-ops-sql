@@ -1,0 +1,32 @@
+1. Top Cities by Order Volume
+
+Analysis:
+Sao Paulo alone accounts for more than twice the order volume of the second-largest city, indicating that any operational improvement in this region would have a disproportionately high business impact.
+
+2. Cancellation Rate by City
+
+Analysis:
+Cancellation rates across most high-volume cities are minimal, indicating that cancellations are not the primary operational risk in this system. Delivery delays are a more significant contributor to customer experience degradation.
+
+3. SLA Breach Rate by City
+
+Analysis:
+Fortaleza and Salvador emerge as the highest delivery-risk cities, with nearly 1 in 5 orders breaching promised delivery timelines, making them top priorities for immediate operational intervention.
+
+4. Revenue at Risk due to Late Deliveries (City Level)
+
+Analysis:
+Sao Paulo and Rio de Janeiro contribute the highest absolute revenue at risk due to delayed deliveries, indicating that even small SLA improvements in these cities could unlock significant revenue recovery.
+Despite lower order volumes, Salvador and Fortaleza show disproportionately high revenue leakage, highlighting them as critical regions for focused interventions.
+
+5. Worst Performing Stores by SLA Breach Rate
+
+Analysis:
+A small set of sellers are responsible for a disproportionately high share of late deliveries, with the worst-performing store breaching SLAs on nearly 1 in 4 orders.
+Targeted audits and fulfillment process improvements on these sellers could significantly improve overall delivery reliability without broad operational changes.
+
+6. Stockout & SKU Concentration Risk
+
+Analysis:
+A small group of SKUs accounts for a disproportionately high share of total order volume, making them critical to inventory availability and replenishment planning.
+Stockouts or fulfillment delays for these products would directly impact a large portion of overall demand and should be prioritized for safety stock and forecasting controls.

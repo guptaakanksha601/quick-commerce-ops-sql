@@ -1,0 +1,175 @@
+CREATE DATABASE quick_commerce_ops;
+USE quick_commerce_ops;
+USE quick_commerce_ops;
+
+CREATE TABLE orders (
+    order_id VARCHAR(50) PRIMARY KEY,
+    customer_id VARCHAR(50),
+    order_status VARCHAR(30),
+    order_purchase_timestamp DATETIME,
+    order_approved_at DATETIME,
+    order_delivered_carrier_date DATETIME,
+    order_delivered_customer_date DATETIME,
+    order_estimated_delivery_date DATETIME
+);
+SHOW TABLES;
+CREATE TABLE customers (
+    customer_id VARCHAR(50) PRIMARY KEY,
+    customer_unique_id VARCHAR(50),
+    customer_zip_code_prefix VARCHAR(20),
+    customer_city VARCHAR(50),
+    customer_state VARCHAR(10)
+);
+CREATE TABLE order_items (
+    order_id VARCHAR(50),
+    order_item_id INT,
+    product_id VARCHAR(50),
+    seller_id VARCHAR(50),
+    shipping_limit_date DATETIME,
+    price DECIMAL(10,2),
+    freight_value DECIMAL(10,2)
+);
+SELECT COUNT(*) FROM customers;
+SELECT COUNT(*) FROM orders;
+SELECT COUNT(*) FROM order_items;
+
+
+/* TOP 10 CITIES BY ORDER */
+SELECT c.customer_city,
+COUNT(o.order_id) AS Total_Orders
+FROM Orders o
+JOIN customers c
+ON
+o.customer_id = c.customer_id
+GROUP BY c.customer_city
+ORDER BY Total_Orders DESC
+LIMIT 10;
+/* Sao Paulo alone accounts for more than 2× the order volume of the second city.
+Which means any ops improvement here has massive impact.*/
+ 
+ 
+ /* CANCELLATION RATE BY CITY*/
+ SELECT c.customer_city, COUNT(*) AS Total_Orders,
+ SUM(CASE WHEN o.order_status = 'canceled' THEN 1 ELSE 0 END) AS Canceled_Orders,
+ ROUND(
+ SUM(CASE WHEN o.order_status = 'canceled' THEN 1 ELSE 0 END) *100/ COUNT(*), 2) AS Cancellation_rate_pct
+ From orders o
+ JOIN customers c 
+ ON
+ o.customer_id = c.customer_id
+ GROUP BY c.customer_city
+ HAVING Total_Orders> 500
+ Order BY Cancellation_rate_pct DESC
+ LIMIT 10;
+/* This analysis identifies which cities contribute most to order failures 
+so operations teams can prioritize risk-prone regions for intervention.*/
+
+/* SLA BREACH RATE BY CITY */
+SELECT 
+    c.customer_city,
+    COUNT(*) AS total_delivered_orders,
+    SUM(
+        CASE 
+            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 
+            ELSE 0 
+        END
+    ) AS sla_breaches,
+    ROUND(
+        SUM(
+            CASE 
+                WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 
+                ELSE 0 
+            END
+        ) * 100.0 / COUNT(*),
+        2
+    ) AS sla_breach_rate_pct
+FROM orders o
+JOIN customers c 
+    ON o.customer_id = c.customer_id
+WHERE o.order_status = 'delivered'
+GROUP BY c.customer_city
+HAVING total_delivered_orders > 500
+ORDER BY sla_breach_rate_pct DESC
+LIMIT 10;
+/* Fortaleza and Salvador are the biggest delivery-risk cities, with nearly 1 in 5 orders breaching
+ promised delivery timelines,making them the top priorities for immediate operational intervention.*/
+ 
+ 
+ /* Revenue at Risk due to Late Deliveries (City Level)*/
+ SELECT 
+    c.customer_city,
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    ROUND(SUM(oi.price + oi.freight_value), 2) AS total_revenue,
+    ROUND(
+        SUM(
+            CASE 
+                WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN (oi.price + oi.freight_value)
+                ELSE 0
+            END
+        ), 2
+    ) AS revenue_at_risk
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE o.order_status = 'delivered'
+GROUP BY c.customer_city
+HAVING total_orders > 500
+ORDER BY revenue_at_risk DESC
+LIMIT 10;
+/* Sao Paulo and Rio de Janeiro account for the highest revenue at risk due to late deliveries, 
+indicating that even small SLA improvements in these cities could unlock significant revenue recovery.
+Despite lower order volumes, cities like Salvador and Fortaleza show disproportionately high revenue leakage, 
+highlighting them as critical regions for focused operational interventions.*/
+
+
+/* Worst Performing Stores by SLA Breach Rate*/
+SELECT 
+    oi.seller_id,
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    SUM(
+        CASE 
+            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 
+            ELSE 0 
+        END
+    ) AS sla_breaches,
+    ROUND(
+        SUM(
+            CASE 
+                WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 
+                ELSE 0 
+            END
+        ) * 100.0 / COUNT(DISTINCT o.order_id),
+        2
+    ) AS sla_breach_rate_pct
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE o.order_status = 'delivered'
+GROUP BY oi.seller_id
+HAVING total_orders > 100
+ORDER BY sla_breach_rate_pct DESC
+LIMIT 10;
+/*A small set of sellers are responsible for a disproportionately high share of late deliveries, 
+with the worst-performing store breaching SLAs on nearly 1 in 4 orders.
+Targeted process audits and capacity planning interventions on these sellers 
+could significantly improve overall delivery reliability without broad operational changes.*/
+
+
+/*Stockout & SKU Concentration Risk*/
+SELECT 
+    oi.product_id,
+    COUNT(DISTINCT oi.order_id) AS total_orders
+FROM order_items oi
+GROUP BY oi.product_id
+ORDER BY total_orders DESC
+LIMIT 10;
+/* A small set of SKUs account for a disproportionately high share of total order volume, 
+making them critical for inventory availability and replenishment accuracy.
+Stockouts or fulfillment delays for these products would directly impact a 
+large portion of overall orders, so they should be prioritized for safety stock and demand forecasting controls.*/
+
+
+
+
+ 
+
+
